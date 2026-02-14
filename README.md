@@ -61,10 +61,5 @@ If you have experience with Forge’s Mixin loader on 1.20.1,
 
 ##  Project Structure
 
-src/main/java/com/reibaru/blockcache/
-  ├── api/
-  ├── client/
-  ├── render/
-  └── mixin/
-      ├── accessor/
-      └── (various mixins)
+<img width="554" height="936" alt="スクリーンショット (246)" src="https://github.com/user-attachments/assets/34604623-267e-4118-a6e9-68e3792263bf" />
+
