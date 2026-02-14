@@ -1,0 +1,28 @@
+modLoader="javafml"
+loaderVersion="[47,)"
+license="MIT"
+
+[[mods]]
+modId="blockcache"
+version="1.0.0"
+displayName="Reibaru-Copilot Mesh Engine"
+authors="Reibaru"
+description='''ブロックをキャッシュ化して軽量化を目指すMODです'''
+
+[[mixins]]
+config = "blockcache.mixins.json"
+
+
+[[dependencies.blockcache]]
+modId="forge"
+mandatory=true
+versionRange="[47,)"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.blockcache]]
+modId="minecraft"
+mandatory=true
+versionRange="[1.20.1,)"
+ordering="NONE"
+side="BOTH"

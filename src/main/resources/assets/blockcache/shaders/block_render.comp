@@ -1,0 +1,119 @@
+#version 460
+#extension GL_NV_gpu_shader5 : enable
+
+struct Block {
+    uvec2 data; // 64bit packed
+};
+
+layout(std430, binding = 3) buffer TileBuffer {
+    Block blocks[];
+};
+
+layout(std430, binding = 4) buffer VertexBuffer {
+    vec4 vertexData[]; // 1頂点 = vec4 * 3 (pos, normal, color)
+};
+
+layout(binding = 5) uniform atomic_uint vertexCounter;
+
+uint64_t unpack64(uvec2 v) {
+    return (uint64_t(v.y) << 32) | uint64_t(v.x);
+}
+
+// ★ 色対応 decodeBlock
+void decodeBlock(uint index,
+                 out uint color,
+                 out uint meta,
+                 out uint light,
+                 out uint flags,
+                 out uint faceInfo)
+{
+    uint64_t raw = unpack64(blocks[index].data);
+
+    color    = uint(raw & 0xFFFFFFFFul);        // ARGB
+    light    = uint((raw >> 32) & 0xFFu);
+    flags    = uint((raw >> 40) & 0xFFu);
+    faceInfo = uint((raw >> 48) & 0xFFu);
+    meta     = uint((raw >> 56) & 0xFFu);
+}
+
+uint getModelType(uint flags) {
+    return (flags >> 5) & 0x7u;
+}
+
+const vec3 CUBE_FACE_VERTS[6][4] = {
+    vec3[4]( vec3(1,0,0), vec3(1,1,0), vec3(1,1,1), vec3(1,0,1) ),
+    vec3[4]( vec3(0,0,1), vec3(0,1,1), vec3(0,1,0), vec3(0,0,0) ),
+    vec3[4]( vec3(0,1,0), vec3(1,1,0), vec3(1,1,1), vec3(0,1,1) ),
+    vec3[4]( vec3(0,0,1), vec3(1,0,1), vec3(1,0,0), vec3(0,0,0) ),
+    vec3[4]( vec3(0,0,1), vec3(0,1,1), vec3(1,1,1), vec3(1,0,1) ),
+    vec3[4]( vec3(1,0,0), vec3(1,1,0), vec3(0,1,0), vec3(0,0,0) )
+};
+
+// ★ 色付き頂点出力
+void emitVertex(vec3 pos, vec3 normal, vec4 color) {
+    uint idx = atomicCounterIncrement(vertexCounter);
+    uint base = idx * 3u;
+
+    vertexData[base + 0] = vec4(pos, 1.0);
+    vertexData[base + 1] = vec4(normal, 1.0);
+    vertexData[base + 2] = color;
+}
+
+void drawCubeFace(int face, vec3 blockWorldPos, vec4 color) {
+    vec3 v0 = blockWorldPos + CUBE_FACE_VERTS[face][0];
+    vec3 v1 = blockWorldPos + CUBE_FACE_VERTS[face][1];
+    vec3 v2 = blockWorldPos + CUBE_FACE_VERTS[face][2];
+    vec3 v3 = blockWorldPos + CUBE_FACE_VERTS[face][3];
+
+    vec3 normal;
+    if      (face == 0) normal = vec3( 1, 0, 0);
+    else if (face == 1) normal = vec3(-1, 0, 0);
+    else if (face == 2) normal = vec3( 0, 1, 0);
+    else if (face == 3) normal = vec3( 0,-1, 0);
+    else if (face == 4) normal = vec3( 0, 0, 1);
+    else                normal = vec3( 0, 0,-1);
+
+    emitVertex(v0, normal, color);
+    emitVertex(v1, normal, color);
+    emitVertex(v2, normal, color);
+
+    emitVertex(v0, normal, color);
+    emitVertex(v2, normal, color);
+    emitVertex(v3, normal, color);
+}
+
+void drawBlock(uint index, vec3 blockWorldPos) {
+    uint colorPacked, meta, light, flags, faceInfo;
+    decodeBlock(index, colorPacked, meta, light, flags, faceInfo);
+
+    // ARGB → vec4
+    float a = float((colorPacked >> 24) & 0xFFu) / 255.0;
+    float r = float((colorPacked >> 16) & 0xFFu) / 255.0;
+    float g = float((colorPacked >> 8)  & 0xFFu) / 255.0;
+    float b = float((colorPacked)       & 0xFFu) / 255.0;
+    vec4 color = vec4(r, g, b, a);
+
+    uint modelType = getModelType(flags);
+
+    // 今は全部 CUBE
+    for (int face = 0; face < 6; face++) {
+        if ((faceInfo & (1u << face)) != 0u) {
+            drawCubeFace(face, blockWorldPos, color);
+        }
+    }
+}
+
+layout(location = 0) uniform ivec3 uTileWorldOrigin;
+layout(local_size_x = 4, local_size_y = 4, local_size_z = 4) in;
+
+void main() {
+    uvec3 local = gl_GlobalInvocationID.xyz;
+
+    if (local.x >= 16u || local.y >= 16u || local.z >= 16u)
+        return;
+
+    uint index = local.x + local.z * 16u + local.y * 256u;
+    vec3 blockWorldPos = vec3(uTileWorldOrigin + ivec3(local));
+
+    drawBlock(index, blockWorldPos);
+}

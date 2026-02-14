@@ -1,0 +1,33 @@
+{
+  "required": false,
+  "minVersion": "0.8.5",
+  "package": "com.reibaru.blockcache.mixin",
+  "compatibilityLevel": "JAVA_17",
+
+  "mixins": [
+    "accessor.RenderChunkAccessor",
+    "accessor.RenderChunkInfoAccessor",
+    "accessor.RenderChunkStorageAccessor",
+    "accessor.RebuildTaskAccessor",
+    "accessor.LevelRendererAccessor",
+    "accessor.ChunkRenderDispatcherAccessor",
+    "accessor.BlockRenderDispatcherAccessor"
+  ],
+
+  "client": [
+    "BufferBuilderInjectInvoker",
+    "RenderChunkMixin",
+    "RenderChunkStorageMixin",
+    "RenderChunkTransparencyMixin",
+    "ResortTransparencyTaskMixin",
+    "RebuildTaskMixin",
+    "VertexBufferMixin",
+    "VertexBufferUploadCancelMixin",
+    "LevelRendererMixin",
+    "ClientLevelMixin"
+  ],
+
+  "injectors": {
+    "defaultRequire": 0
+  }
+}
