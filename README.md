@@ -1,6 +1,6 @@
 # RCME – Render Chunk Mesh Engine for Minecraft Forge 1.20.1
 
-RCME (Reibaru-Copilot Mesh Engine) is an experimental rendering optimization mod for
+RCME is an experimental rendering optimization mod for
 Minecraft Forge 1.20.1.  
 It hooks into `RenderChunk`, `RebuildTask`, and `VertexBuffer` to cache GPU-ready
 chunk meshes and skip redundant rebuilds, aiming to reduce rendering overhead.
