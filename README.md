@@ -12,7 +12,8 @@ This project is currently under active development.
 ##  Features (Planned / In Progress)
 
 - Cache compiled chunk meshes per `RenderType`
-- Reuse cached meshes when camera movement is small
+- Skip unnecessary chunk rebuilds when camera movement is small, since cached meshes
+  are reused continuously after entering the world
 - Diff-based partial chunk rebuilds
 - GPU-side mesh upload via custom `VertexBuffer` hooks
 - Integration with Forge’s rendering pipeline (1.20.1)
